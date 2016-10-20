@@ -4,7 +4,7 @@ Auf Grund der aktuellen Probleme bei den CAs StartSSL und WoSign musste auch ich
 
 Da mir persönlich jedoch die durch den offiziellen ACME-Client certbot vorgegebene Ablagestruktur sowie die stark eingeschränkte Funktionalität bezüglich selbsterstellter CSR nicht zusagen und ich darüberinaus mit FreeBSD auch ein OS verwende, welches derzeit nur rudimentär unterstützt wird, habe ich mir einen eigenen Wrapper für das Tool geschrieben.
 
-Der Wrapper kann aktuell folgende Dinge automatisch erledigen:
+**Der Wrapper kann aktuell folgende Dinge automatisch erledigen:**
 * Registrieren eines LetsEncrypt Accounts pro Domain
 * Erzeugen von ECC (secp384r1) und RSA (2048Bit) Keys pro Domain
 * Erzeugen von ECC (secp384r1) und RSA (2048Bit) Backup-Keys pro Domain
@@ -16,17 +16,17 @@ Der Wrapper kann aktuell folgende Dinge automatisch erledigen:
 * Erneuern der Zertifikate wenn weniger als 10 Tage gültig
 * Erzeugen und aktivieren von HSTS und HPKP
 
-TODO
+**TODO**
 * Kompatibilität zu anderen OS/Distros herstellen
 * Sourcecode optimieren und aufräumen
 * Dokumentation erstellen
 * Funktionalität erweitern
 
-Notwendige manuelle Konfiguration vor der ersten Nutzung des Script:
+**Notwendige manuelle Konfiguration vor der ersten Nutzung des Script:**
 * Es muss für jede Subdomain ein eigener VirtualHost existieren.
 * Es muss für jede Subdomain ein eigener SSL-VirtualHost existieren.
 * In der Apache Konfiguration vor dem ersten VirtualHost einfügen (wenn ein anderes WWWDIR gewünscht ist, bitte auch hier ändern):
-
+```
 	<DirectoryMatch "^\.well-known">
 	    Require all granted
 	</DirectoryMatch>
@@ -39,17 +39,28 @@ Notwendige manuelle Konfiguration vor der ersten Nutzung des Script:
 	    AllowOverride None
 	    Require all granted
 	</Directory>
+```
 
-Ablagestruktur:
+**Ablagestruktur:**
 * Basis-Verzeichnisse
+```
   SSLDIR = /data/ssl # Konfigurierbar im Script
   WWWDIR = /data/www # Konfigurierbar im Script
+```
 * Account-Verzeichnis
+```
   ${SSLDIR}/letsencrypt/accounts
+```
 * Domain-Verzeichnis
+```
   ${SSLDIR}/${DOMAIN}
+```
 * Subomain-Verzeichnis
+```
   ${SSLDIR}/${DOMAIN}/${SUBDOMAIN}
+```
 * ACME-Challenge-Verzeichnis
+```
   ${WWWDIR}/letsencrypt/.well-known/acme-challenge
+```
 
