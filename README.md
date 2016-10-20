@@ -26,6 +26,7 @@ Notwendige manuelle Konfiguration vor der ersten Nutzung des Script:
 * Es muss für jede Subdomain ein eigener VirtualHost existieren.
 * Es muss für jede Subdomain ein eigener SSL-VirtualHost existieren.
 * In der Apache Konfiguration vor dem ersten VirtualHost einfügen (wenn ein anderes WWWDIR gewünscht ist, bitte auch hier ändern):
+
 	<DirectoryMatch "^\.well-known">
 	    Require all granted
 	</DirectoryMatch>
