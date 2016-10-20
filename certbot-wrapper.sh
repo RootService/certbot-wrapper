@@ -223,10 +223,10 @@ create_keys () {
   then
     /usr/bin/openssl genpkey \
       -aes-256-cbc -algorithm EC \
-      -pkeyopt "ec_paramgen_curve:secp384r1" \
-      -pkeyopt "ec_param_enc:named_curve" \
-      -out /data/ssl/${DOMAIN}/_privkey.00.ecc.key.enc \
-      -pass file:/data/ssl/${DOMAIN}/_privkey.00.ecc.pwd
+      -pkeyopt 'ec_paramgen_curve:secp384r1' \
+      -pkeyopt 'ec_param_enc:named_curve' \
+      -out ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
+      -pass file:${DIRSSL}/${DOMAIN}/_privkey.00.ecc.pwd
     /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc
   else
     /usr/bin/openssl ecparam \
@@ -252,7 +252,7 @@ create_keys () {
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.pwd
   /usr/bin/openssl genpkey \
     -aes-256-cbc -algorithm RSA \
-    -pkeyopt "rsa_keygen_bits:2048" \
+    -pkeyopt 'rsa_keygen_bits:2048' \
     -out ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key.enc \
     -pass file:${DIRSSL}/${DOMAIN}/_privkey.00.rsa.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key.enc
@@ -270,10 +270,10 @@ create_keys () {
   then
     /usr/bin/openssl genpkey \
       -aes-256-cbc -algorithm EC \
-      -pkeyopt "ec_paramgen_curve:secp384r1" \
-      -pkeyopt "ec_param_enc:named_curve" \
-      -out /data/ssl/${DOMAIN}/_privkey.01.ecc.key.enc \
-      -pass file:/data/ssl/${DOMAIN}/_privkey.01.ecc.pwd
+      -pkeyopt 'ec_paramgen_curve:secp384r1' \
+      -pkeyopt 'ec_param_enc:named_curve' \
+      -out ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key.enc \
+      -pass file:${DIRSSL}/${DOMAIN}/_privkey.01.ecc.pwd
     /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key.enc
   else
     /usr/bin/openssl ecparam \
@@ -299,7 +299,7 @@ create_keys () {
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.pwd
   /usr/bin/openssl genpkey \
     -aes-256-cbc -algorithm RSA \
-    -pkeyopt "rsa_keygen_bits:2048" \
+    -pkeyopt 'rsa_keygen_bits:2048' \
     -out ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.key.enc \
     -pass file:${DIRSSL}/${DOMAIN}/_privkey.01.rsa.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.key.enc
@@ -485,20 +485,19 @@ EOF
   fi
   HPKP=0
   VHOST_CONF="`/usr/local/sbin/httpd -t -D DUMP_VHOSTS | \
-             /usr/bin/grep -i "${SUBDOMAIN}.${DOMAIN}" | \
-             /usr/bin/awk '/^[^\ ]*:443/ {print $3}' | \
-             /usr/bin/sed -e "s|(\(.*\))|\1|" | \
-             /usr/bin/cut -d : -f 1`"
+               /usr/bin/awk -v h="${SUBDOMAIN}.${DOMAIN}" \
+                 '/port 443/{if($4==h){print $NF}}' | \
+               /usr/bin/sed -e "s|(\(.*\))|\1|" | \
+               /usr/bin/cut -d : -f 1`"
   VHOST_NUM="`/usr/local/sbin/httpd -t -D DUMP_VHOSTS | \
-            /usr/bin/grep -i "${SUBDOMAIN}.${DOMAIN}" | \
-            /usr/bin/awk '/^[^\ ]*:443/ {print $3}' | \
-            /usr/bin/sed -e "s|(\(.*\))|\1|" | \
-            /usr/bin/cut -d : -f 2`"
+              /usr/bin/awk -v h="${SUBDOMAIN}.${DOMAIN}" \
+                '/port 443/{c+=1}{if($4==h){print c}}' | \
+              /usr/bin/sed '/^$/d'`"
   /usr/bin/awk \
     -v n="${VHOST_NUM}" \
     'NR==FNR{i=i?i ORS $0:$0; next} \
-    /<VirtualHost[^>]>/&&++c==n{p=1} p&& \
-    /<\/VirtualHost>/{print i; p=0} !p|| \
+    /^<VirtualHost[^>]*>/&&++c==n{p=1}p&& \
+    /^<\/VirtualHost>/{print i; p=0}!p|| \
     !/SSLCertificate|Strict-Transport-Security|Public-Key-Pins/' \
     ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf \
     ${VHOST_CONF} > ${VHOST_CONF}.tmp
