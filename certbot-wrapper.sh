@@ -171,9 +171,9 @@ show_usage () {
   /bin/echo "Usage: $(basename ${0}) [OPTIONS]
 
 OPTIONS:
-      --create      Create new certificates and account
-      --renew       Renew existing certificates
-      --cron        Renew automatically via cron
+      --create      Create and install new certificates
+      --renew       Renew all certificates valid for less than 10 days
+      --cron        Same as --renew but without any prompts or output
       --help        Display this help and exit
       --version     Output version information and exit
 
@@ -729,6 +729,29 @@ then
   service_reload postfix
 elif [ "${CRON}" = 1 ]
 then
-  cecho "Feature currently not implemented, exiting..." boldyellow
-  exit 1
+  cat ${DIRSSL}/configs/domains.txt | \
+  while read DOMAIN EMAIL OFFSET
+  do
+    OFFSET=
+    cat ${DIRSSL}/configs/${DOMAIN}.txt | \
+    while read SUBDOMAIN OFFSET
+    do
+      OFFSET=
+      CERT_DATE_ORIG="`/usr/bin/openssl x509 \
+                     -inform pem -enddate -noout \
+                     -in ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.00.rsa.crt | \
+                     /usr/bin/cut -d = -f 2-`"
+      CERT_DATE_RENEW_S="`/bin/date -j -u -v-10d -f "%b %d %T %Y %Z" "${CERT_DATE_ORIG}" "+%s"`"
+      if [ "${CUR_DATE_S}" -gt "${CERT_DATE_RENEW_S}" ]
+      then
+        setup_subdomain ${DOMAIN} ${SUBDOMAIN} ${EMAIL}
+      fi
+      SUBDOMAIN=
+    done
+    DOMAIN=
+    EMAIL=
+  done
+  service_reload apache24
+  service_reload dovecot
+  service_reload postfix
 fi
