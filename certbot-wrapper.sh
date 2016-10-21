@@ -47,7 +47,7 @@ APACHE=0
 DOVECOT=0
 POSTFIX=0
 
-VERSION="0.0.1"
+VERSION="0.0.2"
 CUR_DATE_F="`/bin/date -j -u +%F`"
 CUR_DATE_S="`/bin/date -j -u +%s`"
 
