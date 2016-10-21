@@ -381,10 +381,13 @@ EOF
 
 create_letsencrypt_account () {
   local EMAIL="${1}"
-  /usr/local/bin/certbot register \
-    --text --quiet --agree-tos \
-    --config-dir ${DIRSSL}/letsencrypt \
-    --email ${EMAIL}
+  if [ ! -d "${DIRSSL}/letsencrypt/accounts/acme-v01.api.letsencrypt.org" ]
+  then
+    /usr/local/bin/certbot register \
+      --text --quiet --agree-tos \
+      --config-dir ${DIRSSL}/letsencrypt \
+      --email ${EMAIL}
+  fi
   return
 }
 
@@ -485,14 +488,16 @@ EOF
   fi
   HPKP=0
   VHOST_CONF="`/usr/local/sbin/httpd -t -D DUMP_VHOSTS | \
-               /usr/bin/awk -v h="${SUBDOMAIN}.${DOMAIN}" \
+               /usr/bin/awk \
+                 -v h="${SUBDOMAIN}.${DOMAIN}" \
                  '/port 443/{if($4==h){print $NF}}' | \
                /usr/bin/sed -e "s|(\(.*\))|\1|" | \
                /usr/bin/cut -d : -f 1`"
   VHOST_NUM="`/usr/local/sbin/httpd -t -D DUMP_VHOSTS | \
-              /usr/bin/awk -v h="${SUBDOMAIN}.${DOMAIN}" \
-                '/port 443/{c+=1}{if($4==h){print c}}' | \
-              /usr/bin/sed '/^$/d'`"
+              /usr/bin/awk \
+                -v f="${VHOST_CONF}" \
+                -v h="${SUBDOMAIN}.${DOMAIN}" \
+                '/port 443/{if($NF~f){c+=1}{if($4==h){print c}}}'`"
   /usr/bin/awk \
     -v n="${VHOST_NUM}" \
     'NR==FNR{i=i?i ORS $0:$0; next} \
