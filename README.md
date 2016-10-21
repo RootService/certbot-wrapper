@@ -5,7 +5,7 @@ Auf Grund der aktuellen Probleme bei den CAs StartSSL und WoSign musste auch ich
 Da mir persönlich jedoch die durch den offiziellen ACME-Client certbot vorgegebene Ablagestruktur sowie die stark eingeschränkte Funktionalität bezüglich selbsterstellter CSR nicht zusagen und ich darüberinaus mit FreeBSD auch ein OS verwende, welches derzeit nur rudimentär unterstützt wird, habe ich mir einen eigenen Wrapper für das Tool geschrieben.
 
 **Der Wrapper kann aktuell folgende Dinge automatisch erledigen:**
-* Registrieren eines LetsEncrypt Accounts pro Domain
+* Registrieren eines LetsEncrypt Accounts
 * Erzeugen von ECC (secp384r1) und RSA (2048Bit) Keys pro Domain
 * Erzeugen von ECC (secp384r1) und RSA (2048Bit) Backup-Keys pro Domain
 * Erzeugen von ECC (SHA384) und RSA (SHA384) CSRs pro Subdomain
@@ -64,3 +64,4 @@ Da mir persönlich jedoch die durch den offiziellen ACME-Client certbot vorgegeb
   ${WWWDIR}/letsencrypt/.well-known/acme-challenge
 ```
 
+**Copyright © 2016 Markus Kohlmeyer**
