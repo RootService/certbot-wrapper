@@ -380,43 +380,43 @@ EOF
   return
 }
 
-create_letsencrypt_account () {
+create_acme_account () {
   local EMAIL="${1}"
-  if [ ! -d "${DIRSSL}/letsencrypt/accounts/acme-v01.api.letsencrypt.org" ]
+  if [ ! -d "${DIRSSL}/acme/accounts/acme-v01.api.letsencrypt.org" ]
   then
     /usr/local/bin/certbot register \
       --text --quiet --agree-tos \
-      --config-dir ${DIRSSL}/letsencrypt \
+      --config-dir ${DIRSSL}/acme \
       --email ${EMAIL}
   fi
   return
 }
 
-create_letsencrypt_certificates () {
+create_acme_certificates () {
   local DOMAIN="${1}"
   local SUBDOMAIN="${2}"
   local EMAIL="${3}"
   /usr/local/bin/certbot certonly \
     --text --quiet --agree-tos \
-    --config-dir ${DIRSSL}/letsencrypt \
+    --config-dir ${DIRSSL}/acme \
     --csr ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.ecc.csr \
     --key-path ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
     --cert-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.00.ecc.crt \
     --chain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.00.ecc.crt \
     --fullchain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.ecc.crt \
-    --webroot --webroot-path ${DIRWWW}/letsencrypt \
+    --webroot --webroot-path ${DIRWWW}/acme \
     --domain ${SUBDOMAIN}.${DOMAIN} \
     --domain ${DOMAIN} \
     --email ${EMAIL}
   /usr/local/bin/certbot certonly \
     --text --quiet --agree-tos \
-    --config-dir ${DIRSSL}/letsencrypt \
+    --config-dir ${DIRSSL}/acme \
     --csr ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.rsa.csr \
     --key-path ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key.enc \
     --cert-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.00.rsa.crt \
     --chain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.00.rsa.crt \
     --fullchain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.rsa.crt \
-    --webroot --webroot-path ${DIRWWW}/letsencrypt \
+    --webroot --webroot-path ${DIRWWW}/acme \
     --domain ${SUBDOMAIN}.${DOMAIN} \
     --domain ${DOMAIN} \
     --email ${EMAIL}
@@ -491,14 +491,16 @@ EOF
   VHOST_CONF="`/usr/local/sbin/httpd -t -D DUMP_VHOSTS | \
                /usr/bin/awk \
                  -v h="${SUBDOMAIN}.${DOMAIN}" \
-                 '/port 443/{if($4==h){print $NF}}' | \
+                 '/port 443/{if($4==h){print $NF}}; \
+                 /^[^:]*:443/{if($2==h){print $NF}}' | \
                /usr/bin/sed -e "s|(\(.*\))|\1|" | \
                /usr/bin/cut -d : -f 1`"
   VHOST_NUM="`/usr/local/sbin/httpd -t -D DUMP_VHOSTS | \
               /usr/bin/awk \
                 -v f="${VHOST_CONF}" \
                 -v h="${SUBDOMAIN}.${DOMAIN}" \
-                '/port 443/{if($NF~f){c+=1}{if($4==h){print c}}}'`"
+                '/port 443/{if($NF~f){c+=1}{if($4==h){print c}}}; \
+                /^[^:]*:443/{if($NF~f){c+=1}{if($2==h){print c}}}'`"
   /usr/bin/awk \
     -v n="${VHOST_NUM}" \
     'NR==FNR{i=i?i ORS $0:$0; next} \
@@ -556,7 +558,7 @@ setup_domain () {
   fi
   cd ${DIRSSL}/${DOMAIN}
   create_keys ${DOMAIN}
-  create_letsencrypt_account ${EMAIL}
+  create_acme_account ${EMAIL}
   return
 }
 
@@ -574,7 +576,7 @@ setup_subdomain () {
   fi
   cd ${DIRSSL}/${DOMAIN}
   create_requests ${DOMAIN} ${SUBDOMAIN} ${EMAIL}
-  create_letsencrypt_certificates ${DOMAIN} ${SUBDOMAIN} ${EMAIL}
+  create_acme_certificates ${DOMAIN} ${SUBDOMAIN} ${EMAIL}
   return
 }
 
@@ -606,9 +608,9 @@ if [ ! -d "${DIRSSL}/configs" ]
 then
   /bin/mkdir -p ${DIRSSL}/configs
 fi
-if [ ! -d "${DIRWWW}/letsencrypt" ]
+if [ ! -d "${DIRWWW}/acme" ]
 then
-  /bin/mkdir -p ${DIRWWW}/letsencrypt
+  /bin/mkdir -p ${DIRWWW}/acme
 fi
 if [ "${CREATE}" = 1 ]
 then
