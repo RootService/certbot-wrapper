@@ -33,8 +33,8 @@ Da mir persönlich jedoch die durch den offiziellen ACME-Client certbot vorgegeb
 	<FilesMatch "^\.well-known">
 	    Require all granted
 	</FilesMatch>
-	AliasMatch "^/?\.well-known/acme-challenge(.*)" "/data/www/letsencrypt/.well-known/acme-challenge$1"
-	<Directory "/data/www/letsencrypt">
+	AliasMatch "^/?\.well-known/acme-challenge(.*)" "/data/www/acme/.well-known/acme-challenge$1"
+	<Directory "/data/www/acme">
 	    Options None +FollowSymlinks
 	    AllowOverride None
 	    Require all granted
@@ -49,7 +49,7 @@ Da mir persönlich jedoch die durch den offiziellen ACME-Client certbot vorgegeb
 ```
 * Account-Verzeichnis
 ```
-  ${SSLDIR}/letsencrypt/accounts
+  ${SSLDIR}/acme/accounts
 ```
 * Domain-Verzeichnis
 ```
@@ -61,7 +61,7 @@ Da mir persönlich jedoch die durch den offiziellen ACME-Client certbot vorgegeb
 ```
 * ACME-Challenge-Verzeichnis
 ```
-  ${WWWDIR}/letsencrypt/.well-known/acme-challenge
+  ${WWWDIR}/acme/.well-known/acme-challenge
 ```
 
 **Copyright © 2016 Markus Kohlmeyer**
