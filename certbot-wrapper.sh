@@ -48,7 +48,7 @@ APACHE=0
 DOVECOT=0
 POSTFIX=0
 
-VERSION="0.0.4"
+VERSION="0.0.5"
 CUR_DATE_F="`/bin/date -j -u +%F`"
 CUR_DATE_S="`/bin/date -j -u +%s`"
 
@@ -322,6 +322,7 @@ utf8                    = yes
 prompt                  = no
 digests                 = sha384
 default_md              = sha384
+default_bits            = 2048
 encrypt_key             = yes
 string_mask             = utf8only
 distinguished_name      = req_distinguished_name
@@ -343,6 +344,7 @@ keyUsage                = nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage        = serverAuth, clientAuth
 subjectKeyIdentifier    = hash
 subjectAltName          = @altNames
+#1.3.6.1.5.5.7.1.24      = DER:30:03:02:01:05
 
 [ altNames ]
 DNS.1                   = __SUBDOMAIN__.__DOMAIN__
@@ -516,7 +518,7 @@ EOF
 create_dovecot_conf () {
   local DOMAIN="${1}"
   local SUBDOMAIN="${2}"
-  DOVECOT_CONF="`/usr/local/sbin/dovecot -a | awk 'NR==1{print $NF}'`"
+  DOVECOT_CONF="`/usr/local/sbin/dovecot -a | /usr/bin/awk 'NR==1{print $NF}'`"
   /usr/bin/sed \
     -e "s|^\(ssl_eccert\).*$|\1 = <${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.ecc.crt|" \
     -e "s|^\(ssl_eckey\).*$|\1 = <${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key|" \
@@ -529,7 +531,7 @@ create_dovecot_conf () {
 create_postfix_conf () {
   local DOMAIN="${1}"
   local SUBDOMAIN="${2}"
-  POSTFIX_CONF="`/usr/local/sbin/postconf -p config_directory | awk '{print $NF}'`/main.cf"
+  POSTFIX_CONF="`/usr/local/sbin/postconf -p config_directory | /usr/bin/awk '{print $NF}'`/main.cf"
   /usr/bin/sed \
     -e "s|^\(smtpd_tls_eccert_file\).*$|\1 = ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.ecc.crt|" \
     -e "s|^\(smtpd_tls_eckey_file\).*$|\1 = ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key|" \
