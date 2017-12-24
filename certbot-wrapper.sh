@@ -8,7 +8,7 @@
 #  *                                                                                *
 #  * MIT License                                                                    *
 #  *                                                                                *
-#  * Copyright © 2016 Markus Kohlmeyer <rootservice@gmail.com>                      *
+#  * Copyright © 2016-2018 Markus Kohlmeyer <rootservice@gmail.com>                 *
 #  *                                                                                *
 #  * Permission is hereby granted, free of charge, to any person obtaining a copy   *
 #  * of this software and associated documentation files (the "Software"), to deal  *
@@ -181,7 +181,7 @@ Report any bugs to: https://github.com/RootService/certbot-wrapper
 
 MIT License
 
-Copyright (C) 2016 Markus Kohlmeyer <rootservice@gmail.com>
+Copyright (C) 2016-2018 Markus Kohlmeyer <rootservice@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

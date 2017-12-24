@@ -64,4 +64,4 @@ Da mir persönlich jedoch die durch den offiziellen ACME-Client certbot vorgegeb
   ${WWWDIR}/acme/.well-known/acme-challenge
 ```
 
-**Copyright © 2016 Markus Kohlmeyer**
+**Copyright © 2016-2018 Markus Kohlmeyer**
