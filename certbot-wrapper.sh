@@ -37,6 +37,9 @@ DIRWWW="/data/www"
 ###### !!! DO NOT EDIT ANYTHING BELOW THIS LINE !!! ######
 ##########################################################
 
+STAGING=1
+ACMEPROT=1
+
 CREATE=0
 RENEW=0
 CRON=0
@@ -215,96 +218,74 @@ show_version () {
 
 create_keys () {
   local DOMAIN="${1}"
-  /usr/bin/openssl rand -hex 16 | \
-    /usr/bin/openssl passwd -1 -stdin | \
+  /usr/local/bin/openssl rand -hex 16 | \
+    /usr/local/bin/openssl passwd -1 -stdin | \
     /usr/bin/tr -cd "[[:alnum:]]" \
     > ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.pwd
-  if [ "`/usr/bin/openssl version | /usr/bin/cut -w -f 2- | /usr/bin/cut -c 1-5`" = "1.0.2" ]
-  then
-    /usr/bin/openssl genpkey \
-      -aes-256-cbc -algorithm EC \
-      -pkeyopt 'ec_paramgen_curve:secp384r1' \
-      -pkeyopt 'ec_param_enc:named_curve' \
-      -out ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
-      -pass file:${DIRSSL}/${DOMAIN}/_privkey.00.ecc.pwd
-    /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc
-  else
-    /usr/bin/openssl ecparam \
-      -genkey -name secp384r1 -param_enc named_curve \
-      -out ${DIRSSL}/${DOMAIN}/_params.00.ecc.pem
-    /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_params.00.ecc.pem
-    /usr/bin/openssl genpkey \
-      -aes-256-cbc \
-      -paramfile ${DIRSSL}/${DOMAIN}/_params.00.ecc.pem \
-      -out ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
-      -pass file:${DIRSSL}/${DOMAIN}/_privkey.00.ecc.pwd
-    /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc
-  fi
-  /usr/bin/openssl pkey \
+  /usr/local/bin/openssl ecparam \
+    -genkey -name secp384r1 -param_enc named_curve \
+    -out ${DIRSSL}/${DOMAIN}/_params.00.ecc.pem
+  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_params.00.ecc.pem
+  /usr/local/bin/openssl genpkey \
+    -aes-256-cbc \
+    -paramfile ${DIRSSL}/${DOMAIN}/_params.00.ecc.pem \
+    -out ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
+    -pass file:${DIRSSL}/${DOMAIN}/_privkey.00.ecc.pwd
+  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc
+  /usr/local/bin/openssl pkey \
     -in ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
     -out ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key \
     -passin file:${DIRSSL}/${DOMAIN}/_privkey.00.ecc.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key
-  /usr/bin/openssl rand -hex 16 | \
-    /usr/bin/openssl passwd -1 -stdin | \
+  /usr/local/bin/openssl rand -hex 16 | \
+    /usr/local/bin/openssl passwd -1 -stdin | \
     /usr/bin/tr -cd "[[:alnum:]]" \
     > ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.pwd
-  /usr/bin/openssl genpkey \
+  /usr/local/bin/openssl genpkey \
     -aes-256-cbc -algorithm RSA \
     -pkeyopt 'rsa_keygen_bits:2048' \
     -out ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key.enc \
     -pass file:${DIRSSL}/${DOMAIN}/_privkey.00.rsa.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key.enc
-  /usr/bin/openssl pkey \
+  /usr/local/bin/openssl pkey \
     -in ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key.enc \
     -out ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key \
     -passin file:${DIRSSL}/${DOMAIN}/_privkey.00.rsa.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key
-  /usr/bin/openssl rand -hex 16 | \
-    /usr/bin/openssl passwd -1 -stdin | \
+  /usr/local/bin/openssl rand -hex 16 | \
+    /usr/local/bin/openssl passwd -1 -stdin | \
     /usr/bin/tr -cd "[[:alnum:]]" \
     > ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.pwd
-  if [ "`/usr/bin/openssl version | /usr/bin/cut -w -f 2- | /usr/bin/cut -c 1-5`" = "1.0.2" ]
-  then
-    /usr/bin/openssl genpkey \
-      -aes-256-cbc -algorithm EC \
-      -pkeyopt 'ec_paramgen_curve:secp384r1' \
-      -pkeyopt 'ec_param_enc:named_curve' \
-      -out ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key.enc \
-      -pass file:${DIRSSL}/${DOMAIN}/_privkey.01.ecc.pwd
-    /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key.enc
-  else
-    /usr/bin/openssl ecparam \
-      -genkey -name secp384r1 -param_enc named_curve \
-      -out ${DIRSSL}/${DOMAIN}/_params.01.ecc.pem
-    /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_params.01.ecc.pem
-    /usr/bin/openssl genpkey \
-      -aes-256-cbc \
-      -paramfile ${DIRSSL}/${DOMAIN}/_params.01.ecc.pem \
-      -out ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key.enc \
-      -pass file:${DIRSSL}/${DOMAIN}/_privkey.01.ecc.pwd
-    /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key.enc
-  fi
-  /usr/bin/openssl pkey \
+  /usr/local/bin/openssl ecparam \
+    -genkey -name secp384r1 -param_enc named_curve \
+    -out ${DIRSSL}/${DOMAIN}/_params.01.ecc.pem
+  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_params.01.ecc.pem
+  /usr/local/bin/openssl genpkey \
+    -aes-256-cbc \
+    -paramfile ${DIRSSL}/${DOMAIN}/_params.01.ecc.pem \
+    -out ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key.enc \
+    -pass file:${DIRSSL}/${DOMAIN}/_privkey.01.ecc.pwd
+  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key.enc
+  /usr/local/bin/openssl pkey \
     -in ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key.enc \
     -out ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key \
     -passin file:${DIRSSL}/${DOMAIN}/_privkey.01.ecc.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key
-  /usr/bin/openssl rand -hex 16 | \
-    /usr/bin/openssl passwd -1 -stdin | \
+  /usr/local/bin/openssl rand -hex 16 | \
+    /usr/local/bin/openssl passwd -1 -stdin | \
     /usr/bin/tr -cd "[[:alnum:]]" \
     > ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.pwd
-  /usr/bin/openssl genpkey \
+  /usr/local/bin/openssl genpkey \
     -aes-256-cbc -algorithm RSA \
     -pkeyopt 'rsa_keygen_bits:2048' \
     -out ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.key.enc \
     -pass file:${DIRSSL}/${DOMAIN}/_privkey.01.rsa.pwd
   /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.key.enc
-  /usr/bin/openssl pkey \
+  /usr/local/bin/openssl pkey \
     -in ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.key.enc \
     -out ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.key \
     -passin file:${DIRSSL}/${DOMAIN}/_privkey.01.rsa.pwd
@@ -316,7 +297,9 @@ create_requests () {
   local DOMAIN="${1}"
   local SUBDOMAIN="${2}"
   local EMAIL="${3}"
-  /bin/cat > ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf << EOF
+  if [ "${SUBDOMAIN}" == "www" ]
+  then
+    /bin/cat > ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf << EOF
 [ req ]
 utf8                    = yes
 prompt                  = no
@@ -344,36 +327,66 @@ keyUsage                = nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage        = serverAuth, clientAuth
 subjectKeyIdentifier    = hash
 subjectAltName          = @altNames
-#1.3.6.1.5.5.7.1.24      = DER:30:03:02:01:05
+# 1.3.6.1.5.5.7.1.24      = DER:30:03:02:01:05
 
 [ altNames ]
-DNS.1                   = __SUBDOMAIN__.__DOMAIN__
-DNS.2                   = __DOMAIN__
+DNS.1                   = __DOMAIN__
 EOF
+  else
+    /bin/cat > ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf << EOF
+[ req ]
+utf8                    = yes
+prompt                  = no
+digests                 = sha384
+default_md              = sha384
+default_bits            = 2048
+encrypt_key             = yes
+string_mask             = utf8only
+distinguished_name      = req_distinguished_name
+req_extensions          = v3_req
+SET-ex3                 = SET extension number 3
+
+[ req_distinguished_name ]
+C                       = DE
+ST                      = Hamburg
+L                       = Hamburg
+O                       = Organization
+OU                      = Certification Authority
+CN                      = __SUBDOMAIN__.__DOMAIN__
+emailAddress            = __EMAIL__
+
+[ v3_req ]
+basicConstraints        = CA:FALSE
+keyUsage                = nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage        = serverAuth, clientAuth
+subjectKeyIdentifier    = hash
+# 1.3.6.1.5.5.7.1.24      = DER:30:03:02:01:05
+EOF
+  fi
   /usr/bin/sed \
     -e "s|__SUBDOMAIN__|${SUBDOMAIN}|g" \
     -e "s|__DOMAIN__|${DOMAIN}|g" \
     -e "s|__EMAIL__|${EMAIL}|g" \
     -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf
-  /usr/bin/openssl req \
+  /usr/local/bin/openssl req \
     -new -batch -sha384 \
     -config ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf \
     -out ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.ecc.csr \
     -key ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
     -passin file:${DIRSSL}/${DOMAIN}/_privkey.00.ecc.pwd
-  /usr/bin/openssl req \
+  /usr/local/bin/openssl req \
     -new -batch -sha384 \
     -config ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf \
     -out ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.rsa.csr \
     -key ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key.enc \
     -passin file:${DIRSSL}/${DOMAIN}/_privkey.00.rsa.pwd
-  /usr/bin/openssl req \
+  /usr/local/bin/openssl req \
     -new -batch -sha384 \
     -config ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf \
     -out ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.ecc.csr \
     -key ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
     -passin file:${DIRSSL}/${DOMAIN}/_privkey.00.ecc.pwd
-  /usr/bin/openssl req \
+  /usr/local/bin/openssl req \
     -new -batch -sha384 \
     -config ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf \
     -out ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.rsa.csr \
@@ -384,12 +397,28 @@ EOF
 
 create_acme_account () {
   local EMAIL="${1}"
-  if [ ! -d "${DIRSSL}/acme/accounts/acme-v01.api.letsencrypt.org" ]
+  if [ "${STAGING}" -eq "1" ]
+    local ACMESERV="acme-staging.api.letsencrypt.org"
+    local STAGINGPARM="--staging"
+  elif [ "${STAGING}" -eq "0" ]
+    local STAGINGPARM=""
+    if [ "${ACMEPROT}" -eq "1" ]
+      local ACMESERV="acme-v01.api.letsencrypt.org"
+    elif [ "${ACMEPROT}" -eq "2" ]
+      local ACMESERV="acme-v02.api.letsencrypt.org"
+    else
+      cecho "ACMEPROT ${ACMEPROT} not supportet" boldred
+    fi
+  else
+    cecho "STAGING ${STAGING} not supportet" boldred
+  fi
+  if [ ! -d "${DIRSSL}/acme/accounts/${ACMESERV}" ]
   then
-    /usr/local/bin/certbot register \
-      --text --quiet --agree-tos \
-      --config-dir ${DIRSSL}/acme \
-      --email ${EMAIL}
+    /usr/local/bin/certbot register ${STAGINGPARM} \
+      --text --quiet --agree-tos --non-interactive \
+      --user-agent-comment "RootService-Wrapper/${VERSION}" \
+      --preferred-challenges tls-sni,http --config-dir ${DIRSSL}/acme \
+      --no-eff-email --email ${EMAIL}
   fi
   return
 }
@@ -398,30 +427,41 @@ create_acme_certificates () {
   local DOMAIN="${1}"
   local SUBDOMAIN="${2}"
   local EMAIL="${3}"
-  /usr/local/bin/certbot certonly \
-    --text --quiet --agree-tos \
-    --config-dir ${DIRSSL}/acme \
+  if [ "${STAGING}" -eq "1" ]
+    local STAGINGPARM="--staging"
+  elif [ "${STAGING}" -eq "0" ]
+    local STAGINGPARM=""
+  else
+    cecho "STAGING ${STAGING} not supportet" boldred
+  fi
+  if [ "${SUBDOMAIN}" == "www" ]
+  then
+    local BAREDOMAIN="--domain ${DOMAIN}"
+  else
+    local BAREDOMAIN=""
+  fi
+  /usr/local/bin/certbot certonly ${STAGINGPARM} \
+    --text --quiet --agree-tos --non-interactive \
+    --user-agent-comment "RootService-Wrapper/${VERSION}" \
+    --preferred-challenges tls-sni,http --config-dir ${DIRSSL}/acme \
     --csr ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.ecc.csr \
     --key-path ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
     --cert-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.00.ecc.crt \
     --chain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.00.ecc.crt \
     --fullchain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.ecc.crt \
-    --webroot --webroot-path ${DIRWWW}/acme \
-    --domain ${SUBDOMAIN}.${DOMAIN} \
-    --domain ${DOMAIN} \
-    --email ${EMAIL}
-  /usr/local/bin/certbot certonly \
-    --text --quiet --agree-tos \
-    --config-dir ${DIRSSL}/acme \
+    --email ${EMAIL} --webroot --webroot-path ${DIRWWW}/acme \
+    --domain ${SUBDOMAIN}.${DOMAIN} ${BAREDOMAIN}
+  /usr/local/bin/certbot certonly ${STAGINGPARM} \
+    --text --quiet --agree-tos --non-interactive \
+    --user-agent-comment "RootService-Wrapper/${VERSION}" \
+    --preferred-challenges tls-sni,http --config-dir ${DIRSSL}/acme \
     --csr ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.rsa.csr \
     --key-path ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key.enc \
     --cert-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.00.rsa.crt \
     --chain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.00.rsa.crt \
     --fullchain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.rsa.crt \
-    --webroot --webroot-path ${DIRWWW}/acme \
-    --domain ${SUBDOMAIN}.${DOMAIN} \
-    --domain ${DOMAIN} \
-    --email ${EMAIL}
+    --email ${EMAIL} --webroot --webroot-path ${DIRWWW}/acme \
+    --domain ${SUBDOMAIN}.${DOMAIN} ${BAREDOMAIN}
   return
 }
 
@@ -433,10 +473,8 @@ create_apache24_conf () {
     SSLCertificateKeyFile "__KEY00ECC__"
     SSLCertificateFile "__CERT00RSA__"
     SSLCertificateKeyFile "__KEY00RSA__"
-    <IfModule headers_module>
-#        Header set Strict-Transport-Security "max-age=15768000; includeSubdomains; preload"
-#        Header set Public-Key-Pins "max-age=2592000; includeSubDomains; pin-sha256=\"__PIN00ECC__\"; pin-sha256=\"__PIN00RSA__\"; pin-sha256=\"__PIN01ECC__\"; pin-sha256=\"__PIN01RSA__\";"
-    </IfModule>
+#    Header set Strict-Transport-Security "max-age=15768000; includeSubdomains; preload"
+#    Header set Public-Key-Pins "max-age=2592000; includeSubDomains; pin-sha256=\"__PIN00ECC__\"; pin-sha256=\"__PIN00RSA__\"; pin-sha256=\"__PIN01ECC__\"; pin-sha256=\"__PIN01RSA__\";"
 EOF
   /usr/bin/sed \
     -e "s|__CERT00ECC__|${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.ecc.crt|" \
@@ -444,35 +482,35 @@ EOF
     -e "s|__CERT00RSA__|${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.rsa.crt|" \
     -e "s|__KEY00RSA__|${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key|" \
     -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
-  /usr/bin/openssl pkey \
+  /usr/local/bin/openssl pkey \
     -pubout -outform der \
     -in ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key | \
-    /usr/bin/openssl dgst -sha256 -binary | \
-    /usr/bin/openssl enc -base64 | \
+    /usr/local/bin/openssl dgst -sha256 -binary | \
+    /usr/local/bin/openssl enc -base64 | \
     /usr/bin/xargs -I % /usr/bin/sed \
     -e "s|__PIN00ECC__|%|" \
     -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
-  /usr/bin/openssl pkey \
+  /usr/local/bin/openssl pkey \
     -pubout -outform der \
     -in ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key | \
-    /usr/bin/openssl dgst -sha256 -binary | \
-    /usr/bin/openssl enc -base64 | \
+    /usr/local/bin/openssl dgst -sha256 -binary | \
+    /usr/local/bin/openssl enc -base64 | \
     /usr/bin/xargs -I % /usr/bin/sed \
     -e "s|__PIN00RSA__|%|" \
     -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
-  /usr/bin/openssl pkey \
+  /usr/local/bin/openssl pkey \
     -pubout -outform der \
     -in ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key | \
-    /usr/bin/openssl dgst -sha256 -binary | \
-    /usr/bin/openssl enc -base64 | \
+    /usr/local/bin/openssl dgst -sha256 -binary | \
+    /usr/local/bin/openssl enc -base64 | \
     /usr/bin/xargs -I % /usr/bin/sed \
     -e "s|__PIN01ECC__|%|" \
     -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
-  /usr/bin/openssl pkey \
+  /usr/local/bin/openssl pkey \
     -pubout -outform der \
     -in ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.key | \
-    /usr/bin/openssl dgst -sha256 -binary | \
-    /usr/bin/openssl enc -base64 | \
+    /usr/local/bin/openssl dgst -sha256 -binary | \
+    /usr/local/bin/openssl enc -base64 | \
     /usr/bin/xargs -I % /usr/bin/sed \
     -e "s|__PIN01RSA__|%|" \
     -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
@@ -610,9 +648,9 @@ if [ ! -d "${DIRSSL}/configs" ]
 then
   /bin/mkdir -p ${DIRSSL}/configs
 fi
-if [ ! -d "${DIRWWW}/acme" ]
+if [ ! -d "${DIRWWW}/acme/.well-known" ]
 then
-  /bin/mkdir -p ${DIRWWW}/acme
+  /bin/mkdir -p ${DIRWWW}/acme/.well-known
 fi
 if [ "${CREATE}" = 1 ]
 then
@@ -713,7 +751,7 @@ then
         OFFSET=
         cecho "Backups of your current certificates will be saved in" white
         cecho "${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}/${SUBDOMAIN}" white
-        CERT_DATE_ORIG="`/usr/bin/openssl x509 \
+        CERT_DATE_ORIG="`/usr/local/bin/openssl x509 \
                        -inform pem -enddate -noout \
                        -in ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.00.rsa.crt | \
                        /usr/bin/cut -d = -f 2-`"
@@ -741,7 +779,7 @@ then
     while read SUBDOMAIN OFFSET
     do
       OFFSET=
-      CERT_DATE_ORIG="`/usr/bin/openssl x509 \
+      CERT_DATE_ORIG="`/usr/local/bin/openssl x509 \
                      -inform pem -enddate -noout \
                      -in ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.00.rsa.crt | \
                      /usr/bin/cut -d = -f 2-`"
