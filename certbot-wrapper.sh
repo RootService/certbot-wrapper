@@ -398,13 +398,17 @@ EOF
 create_acme_account () {
   local EMAIL="${1}"
   if [ "${STAGING}" -eq "1" ]
+  then
     local ACMESERV="acme-staging.api.letsencrypt.org"
     local STAGINGPARM="--staging"
   elif [ "${STAGING}" -eq "0" ]
+  then
     local STAGINGPARM=""
     if [ "${ACMEPROT}" -eq "1" ]
+    then
       local ACMESERV="acme-v01.api.letsencrypt.org"
     elif [ "${ACMEPROT}" -eq "2" ]
+    then
       local ACMESERV="acme-v02.api.letsencrypt.org"
     else
       cecho "ACMEPROT ${ACMEPROT} not supportet" boldred
@@ -428,8 +432,10 @@ create_acme_certificates () {
   local SUBDOMAIN="${2}"
   local EMAIL="${3}"
   if [ "${STAGING}" -eq "1" ]
+  then
     local STAGINGPARM="--staging"
   elif [ "${STAGING}" -eq "0" ]
+  then
     local STAGINGPARM=""
   else
     cecho "STAGING ${STAGING} not supportet" boldred
