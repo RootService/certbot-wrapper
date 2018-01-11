@@ -421,7 +421,7 @@ create_acme_account () {
     /usr/local/bin/certbot register ${STAGINGPARM} \
       --text --quiet --agree-tos --non-interactive \
       --user-agent-comment "RootService-Wrapper/${VERSION}" \
-      --preferred-challenges tls-sni,http --config-dir ${DIRSSL}/acme \
+      --preferred-challenges http --config-dir ${DIRSSL}/acme \
       --no-eff-email --email ${EMAIL}
   fi
   return
@@ -449,7 +449,7 @@ create_acme_certificates () {
   /usr/local/bin/certbot certonly ${STAGINGPARM} \
     --text --quiet --agree-tos --non-interactive \
     --user-agent-comment "RootService-Wrapper/${VERSION}" \
-    --preferred-challenges tls-sni,http --config-dir ${DIRSSL}/acme \
+    --preferred-challenges http --config-dir ${DIRSSL}/acme \
     --csr ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.ecc.csr \
     --key-path ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key.enc \
     --cert-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.00.ecc.crt \
@@ -460,7 +460,7 @@ create_acme_certificates () {
   /usr/local/bin/certbot certonly ${STAGINGPARM} \
     --text --quiet --agree-tos --non-interactive \
     --user-agent-comment "RootService-Wrapper/${VERSION}" \
-    --preferred-challenges tls-sni,http --config-dir ${DIRSSL}/acme \
+    --preferred-challenges http --config-dir ${DIRSSL}/acme \
     --csr ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.00.rsa.csr \
     --key-path ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key.enc \
     --cert-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.00.rsa.crt \
