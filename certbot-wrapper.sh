@@ -45,13 +45,12 @@ RENEW=0
 CRON=0
 
 HSTS=0
-HPKP=0
 APACHE=0
 
 DOVECOT=0
 POSTFIX=0
 
-VERSION="0.1.0"
+VERSION="0.2.0"
 CUR_DATE_F="`/bin/date -j -u +%F`"
 CUR_DATE_S="`/bin/date -j -u +%s`"
 
@@ -399,17 +398,27 @@ create_acme_account () {
   local EMAIL="${1}"
   if [ "${STAGING}" -eq "1" ]
   then
-    local ACMESERV="acme-staging.api.letsencrypt.org"
-    local STAGINGPARM="--staging"
+    if [ "${ACMEPROT}" -eq "2" ]
+    then
+      local ACMESERV="acme-staging-v02.api.letsencrypt.org"
+      local STAGINGPARM="--staging"
+    elif [ "${ACMEPROT}" -eq "1" ]
+    then
+      local ACMESERV="acme-staging-v01.api.letsencrypt.org"
+      local STAGINGPARM="--staging"
+    else
+      cecho "ACMEPROT ${ACMEPROT} not supportet" boldred
+    fi
   elif [ "${STAGING}" -eq "0" ]
   then
-    local STAGINGPARM=""
-    if [ "${ACMEPROT}" -eq "1" ]
-    then
-      local ACMESERV="acme-v01.api.letsencrypt.org"
-    elif [ "${ACMEPROT}" -eq "2" ]
+    if [ "${ACMEPROT}" -eq "2" ]
     then
       local ACMESERV="acme-v02.api.letsencrypt.org"
+      local STAGINGPARM=""
+    elif [ "${ACMEPROT}" -eq "1" ]
+    then
+      local ACMESERV="acme-v01.api.letsencrypt.org"
+      local STAGINGPARM=""
     else
       cecho "ACMEPROT ${ACMEPROT} not supportet" boldred
     fi
@@ -480,45 +489,12 @@ create_apache24_conf () {
     SSLCertificateFile "__CERT00RSA__"
     SSLCertificateKeyFile "__KEY00RSA__"
 #    Header set Strict-Transport-Security "max-age=15768000; includeSubdomains; preload"
-#    Header set Public-Key-Pins "max-age=2592000; includeSubDomains; pin-sha256=\"__PIN00ECC__\"; pin-sha256=\"__PIN00RSA__\"; pin-sha256=\"__PIN01ECC__\"; pin-sha256=\"__PIN01RSA__\";"
 EOF
   /usr/bin/sed \
     -e "s|__CERT00ECC__|${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.ecc.crt|" \
     -e "s|__KEY00ECC__|${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key|" \
     -e "s|__CERT00RSA__|${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.00.rsa.crt|" \
     -e "s|__KEY00RSA__|${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key|" \
-    -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
-  /usr/local/bin/openssl pkey \
-    -pubout -outform der \
-    -in ${DIRSSL}/${DOMAIN}/_privkey.00.ecc.key | \
-    /usr/local/bin/openssl dgst -sha256 -binary | \
-    /usr/local/bin/openssl enc -base64 | \
-    /usr/bin/xargs -I % /usr/bin/sed \
-    -e "s|__PIN00ECC__|%|" \
-    -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
-  /usr/local/bin/openssl pkey \
-    -pubout -outform der \
-    -in ${DIRSSL}/${DOMAIN}/_privkey.00.rsa.key | \
-    /usr/local/bin/openssl dgst -sha256 -binary | \
-    /usr/local/bin/openssl enc -base64 | \
-    /usr/bin/xargs -I % /usr/bin/sed \
-    -e "s|__PIN00RSA__|%|" \
-    -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
-  /usr/local/bin/openssl pkey \
-    -pubout -outform der \
-    -in ${DIRSSL}/${DOMAIN}/_privkey.01.ecc.key | \
-    /usr/local/bin/openssl dgst -sha256 -binary | \
-    /usr/local/bin/openssl enc -base64 | \
-    /usr/bin/xargs -I % /usr/bin/sed \
-    -e "s|__PIN01ECC__|%|" \
-    -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
-  /usr/local/bin/openssl pkey \
-    -pubout -outform der \
-    -in ${DIRSSL}/${DOMAIN}/_privkey.01.rsa.key | \
-    /usr/local/bin/openssl dgst -sha256 -binary | \
-    /usr/local/bin/openssl enc -base64 | \
-    /usr/bin/xargs -I % /usr/bin/sed \
-    -e "s|__PIN01RSA__|%|" \
     -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
   if [ "${HSTS}" = 1 ]
   then
@@ -527,13 +503,6 @@ EOF
       -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
   fi
   HSTS=0
-  if [ "${HPKP}" = 1 ]
-  then
-    /usr/bin/sed \
-      -e "s|^#\(.*Public-Key-Pins.*\)|\1|" \
-      -i "" ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
-  fi
-  HPKP=0
   VHOST_CONF="`/usr/local/sbin/httpd -t -D DUMP_VHOSTS | \
                /usr/bin/awk \
                  -v h="${SUBDOMAIN}.${DOMAIN}" \
@@ -700,11 +669,6 @@ then
         if [ "x${REPLY}" = "xy" ]
         then
           HSTS=1
-        fi
-        read_prompt "Activate HPKP for this subdomain? [y/n]"
-        if [ "x${REPLY}" = "xy" ]
-        then
-          HPKP=1
         fi
         create_apache24_conf ${DOMAIN} ${SUBDOMAIN}
         service_reload apache24
