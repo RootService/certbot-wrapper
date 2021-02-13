@@ -8,7 +8,7 @@
 #  *                                                                                *
 #  * MIT License                                                                    *
 #  *                                                                                *
-#  * Copyright © 2016-2018 Markus Kohlmeyer <rootservice@gmail.com>                 *
+#  * Copyright © 2016-2021 Markus Kohlmeyer <rootservice@gmail.com>                 *
 #  *                                                                                *
 #  * Permission is hereby granted, free of charge, to any person obtaining a copy   *
 #  * of this software and associated documentation files (the "Software"), to deal  *
@@ -38,7 +38,7 @@ DIRWWW="/data/www"
 ##########################################################
 
 STAGING=1
-ACMEPROT=1
+ACMEPROT=2
 
 CREATE=0
 RENEW=0
@@ -50,7 +50,7 @@ APACHE=0
 DOVECOT=0
 POSTFIX=0
 
-VERSION="0.2.0"
+VERSION="0.3.0"
 CUR_DATE_F="`/bin/date -j -u +%F`"
 CUR_DATE_S="`/bin/date -j -u +%s`"
 
@@ -183,7 +183,7 @@ Report any bugs to: https://github.com/RootService/certbot-wrapper
 
 MIT License
 
-Copyright (C) 2016-2018 Markus Kohlmeyer <rootservice@gmail.com>
+Copyright (C) 2016-2021 Markus Kohlmeyer <rootservice@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -404,7 +404,7 @@ create_acme_account () {
       local STAGINGPARM="--staging"
     elif [ "${ACMEPROT}" -eq "1" ]
     then
-      local ACMESERV="acme-staging-v01.api.letsencrypt.org"
+      local ACMESERV="acme-staging.api.letsencrypt.org"
       local STAGINGPARM="--staging"
     else
       cecho "ACMEPROT ${ACMEPROT} not supportet" boldred
