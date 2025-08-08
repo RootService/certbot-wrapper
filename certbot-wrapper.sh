@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 #
 #  **********************************************************************************
 #  *                                certbot-wrapper                                 *
@@ -214,39 +215,39 @@ create_keys () {
   /usr/local/bin/openssl rand -hex 16 | \
     /usr/local/bin/openssl passwd -1 -stdin | \
     /usr/bin/tr -cd "[[:alnum:]]" \
-    > ${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd
-  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd
+    > "${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd"
+  /bin/chmod 0400 "${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd"
   /usr/local/bin/openssl ecparam \
     -genkey -name secp384r1 -param_enc named_curve \
-    -out ${DIRSSL}/${DOMAIN}/_params.ecc.pem
-  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_params.ecc.pem
+    -out "${DIRSSL}/${DOMAIN}/_params.ecc.pem"
+  /bin/chmod 0400 "${DIRSSL}/${DOMAIN}/_params.ecc.pem"
   /usr/local/bin/openssl genpkey \
     -aes-256-cbc \
-    -paramfile ${DIRSSL}/${DOMAIN}/_params.ecc.pem \
-    -out ${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc \
-    -pass file:${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd
-  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc
+    -paramfile "${DIRSSL}/${DOMAIN}/_params.ecc.pem" \
+    -out "${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc" \
+    -pass file:"${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd"
+  /bin/chmod 0400 "${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc"
   /usr/local/bin/openssl pkey \
-    -in ${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc \
-    -out ${DIRSSL}/${DOMAIN}/_privkey.ecc.key \
-    -passin file:${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd
-  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.ecc.key
+    -in "${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc" \
+    -out "${DIRSSL}/${DOMAIN}/_privkey.ecc.key" \
+    -passin file:"${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd"
+  /bin/chmod 0400 "${DIRSSL}/${DOMAIN}/_privkey.ecc.key"
   /usr/local/bin/openssl rand -hex 16 | \
     /usr/local/bin/openssl passwd -1 -stdin | \
     /usr/bin/tr -cd "[[:alnum:]]" \
-    > ${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd
-  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd
+    > "${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd"
+  /bin/chmod 0400 "${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd"
   /usr/local/bin/openssl genpkey \
     -aes-256-cbc -algorithm RSA \
     -pkeyopt 'rsa_keygen_bits:2048' \
-    -out ${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc \
-    -pass file:${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd
-  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc
+    -out "${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc" \
+    -pass file:"${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd"
+  /bin/chmod 0400 "${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc"
   /usr/local/bin/openssl pkey \
-    -in ${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc \
-    -out ${DIRSSL}/${DOMAIN}/_privkey.rsa.key \
-    -passin file:${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd
-  /bin/chmod 0400 ${DIRSSL}/${DOMAIN}/_privkey.rsa.key
+    -in "${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc" \
+    -out "${DIRSSL}/${DOMAIN}/_privkey.rsa.key" \
+    -passin file:"${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd"
+  /bin/chmod 0400 "${DIRSSL}/${DOMAIN}/_privkey.rsa.key"
   return
 }
 
@@ -255,7 +256,7 @@ create_requests () {
   local SUBDOMAIN="${2}"
   local EMAIL="${3}"
   if [ "${SUBDOMAIN}" = "www" ]; then
-    /bin/cat > ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf << EOF
+    /bin/cat > "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf" << EOF
 [ req ]
 utf8                    = yes
 prompt                  = no
@@ -289,7 +290,7 @@ subjectAltName          = @altNames
 DNS.1                   = __DOMAIN__
 EOF
   else
-    /bin/cat > ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf << EOF
+    /bin/cat > "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf" << EOF
 [ req ]
 utf8                    = yes
 prompt                  = no
@@ -323,19 +324,19 @@ EOF
     -e "s|__SUBDOMAIN__|${SUBDOMAIN}|g" \
     -e "s|__DOMAIN__|${DOMAIN}|g" \
     -e "s|__EMAIL__|${EMAIL}|g" \
-    -i '' ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf
+    -i '' "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf"
   /usr/local/bin/openssl req \
     -new -batch -sha384 \
-    -config ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf \
-    -out ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.ecc.csr \
-    -key ${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc \
-    -passin file:${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd
+    -config "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf" \
+    -out ""${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.ecc.csr"" \
+    -key ""${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc"" \
+    -passin file:"${DIRSSL}/${DOMAIN}/_privkey.ecc.pwd"
   /usr/local/bin/openssl req \
     -new -batch -sha384 \
-    -config ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf \
-    -out ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.rsa.csr \
-    -key ${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc \
-    -passin file:${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd
+    -config "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/openssl.conf" \
+    -out "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.rsa.csr" \
+    -key "${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc" \
+    -passin file:"${DIRSSL}/${DOMAIN}/_privkey.rsa.pwd"
   return
 }
 
@@ -364,11 +365,11 @@ create_acme_account () {
   else
     cecho "STAGING ${STAGING} not supported" boldred
   fi
-  if [ ! -d "${DIRSSL}/acme/accounts/${ACMESERV}" ]; then
+  if [ ! -d ""${DIRSSL}/acme/accounts/${ACMESERV}"" ]; then
     /usr/local/bin/certbot register ${STAGINGPARM} \
       --text --quiet --agree-tos --non-interactive \
       --user-agent-comment "RootService-Wrapper/${VERSION}" \
-      --preferred-challenges http --config-dir ${DIRSSL}/acme \
+      --preferred-challenges http --config-dir "${DIRSSL}/acme" \
       --no-eff-email --email ${EMAIL}
   fi
   return
@@ -388,24 +389,24 @@ create_acme_certificates () {
   /usr/local/bin/certbot certonly ${STAGINGPARM} \
     --text --quiet --agree-tos --non-interactive \
     --user-agent-comment "RootService-Wrapper/${VERSION}" \
-    --preferred-challenges http --config-dir ${DIRSSL}/acme \
-    --csr ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.ecc.csr \
-    --key-path ${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc \
-    --cert-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.ecc.crt \
-    --chain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.ecc.crt \
-    --fullchain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt \
-    --email ${EMAIL} --webroot --webroot-path ${DIRWWW}/acme \
+    --preferred-challenges http --config-dir "${DIRSSL}/acme" \
+    --csr "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.ecc.csr" \
+    --key-path "${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc" \
+    --cert-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.ecc.crt" \
+    --chain-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.ecc.crt" \
+    --fullchain-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt" \
+    --email ${EMAIL} --webroot --webroot-path "${DIRWWW}/acme" \
     --domain ${SUBDOMAIN}.${DOMAIN}
   /usr/local/bin/certbot certonly ${STAGINGPARM} \
     --text --quiet --agree-tos --non-interactive \
     --user-agent-comment "RootService-Wrapper/${VERSION}" \
-    --preferred-challenges http --config-dir ${DIRSSL}/acme \
-    --csr ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.rsa.csr \
-    --key-path ${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc \
-    --cert-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt \
-    --chain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.rsa.crt \
-    --fullchain-path ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt \
-    --email ${EMAIL} --webroot --webroot-path ${DIRWWW}/acme \
+    --preferred-challenges http --config-dir "${DIRSSL}/acme" \
+    --csr "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.rsa.csr" \
+    --key-path "${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc" \
+    --cert-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt" \
+    --chain-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.rsa.crt" \
+    --fullchain-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt" \
+    --email ${EMAIL} --webroot --webroot-path "${DIRWWW}/acme" \
     --domain ${SUBDOMAIN}.${DOMAIN}
   return
 }
@@ -413,7 +414,7 @@ create_acme_certificates () {
 create_apache24_conf () {
   local DOMAIN="${1}"
   local SUBDOMAIN="${2}"
-  /bin/cat > ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf << EOF
+  /bin/cat > "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf" << EOF
     SSLCertificateFile "__CERT00ECC__"
     SSLCertificateKeyFile "__KEY00ECC__"
     SSLCertificateFile "__CERT00RSA__"
@@ -421,15 +422,15 @@ create_apache24_conf () {
 #    Header set Strict-Transport-Security "max-age=15768000; includeSubdomains; preload"
 EOF
   /usr/bin/sed \
-    -e "s|__CERT00ECC__|${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt|" \
-    -e "s|__KEY00ECC__|${DIRSSL}/${DOMAIN}/_privkey.ecc.key|" \
-    -e "s|__CERT00RSA__|${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt|" \
-    -e "s|__KEY00RSA__|${DIRSSL}/${DOMAIN}/_privkey.rsa.key|" \
-    -i '' ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
+    -e "s|__CERT00ECC__|"${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt|"" \
+    -e "s|__KEY00ECC__|"${DIRSSL}/${DOMAIN}/_privkey.ecc.key|"" \
+    -e "s|__CERT00RSA__|"${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt|"" \
+    -e "s|__KEY00RSA__|"${DIRSSL}/${DOMAIN}/_privkey.rsa.key|"" \
+    -i '' "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf"
   if [ "${HSTS}" -eq 1 ]; then
     /usr/bin/sed \
       -e "s|^#\(.*Strict-Transport-Security.*\)|\1|" \
-      -i '' ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf
+      -i '' "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf"
   fi
   HSTS=0
   VHOST_CONF="$(/usr/local/sbin/httpd -t -D DUMP_VHOSTS | \
@@ -451,7 +452,7 @@ EOF
     /^<VirtualHost[^>]*>/&&++c==n{p=1}p&& \
     /^<\/VirtualHost>/{print i; p=0}!p|| \
     !/SSLCertificate|Strict-Transport-Security|Public-Key-Pins/' \
-    ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf \
+    "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/apache24.conf" \
     ${VHOST_CONF} > ${VHOST_CONF}.tmp
   /bin/mv -f ${VHOST_CONF}.tmp ${VHOST_CONF}
   return
@@ -462,10 +463,10 @@ create_dovecot_conf () {
   local SUBDOMAIN="${2}"
   DOVECOT_CONF="$(/usr/local/sbin/dovecot -a | /usr/bin/awk 'NR==1{print $NF}')"
   /usr/bin/sed \
-    -e "s|^\(ssl_eccert\).*$|\1 = <${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt|" \
-    -e "s|^\(ssl_eckey\).*$|\1 = <${DIRSSL}/${DOMAIN}/_privkey.ecc.key|" \
-    -e "s|^\(ssl_cert\).*$|\1 = <${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt|" \
-    -e "s|^\(ssl_key\).*$|\1 = <${DIRSSL}/${DOMAIN}/_privkey.rsa.key|" \
+    -e "s|^\(ssl_eccert\).*$|\1 = <"${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt|"" \
+    -e "s|^\(ssl_eckey\).*$|\1 = <"${DIRSSL}/${DOMAIN}/_privkey.ecc.key|"" \
+    -e "s|^\(ssl_cert\).*$|\1 = <"${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt|"" \
+    -e "s|^\(ssl_key\).*$|\1 = <"${DIRSSL}/${DOMAIN}/_privkey.rsa.key|"" \
     -i '' ${DOVECOT_CONF}
   return
 }
@@ -475,10 +476,10 @@ create_postfix_conf () {
   local SUBDOMAIN="${2}"
   POSTFIX_CONF="$(/usr/local/sbin/postconf -p config_directory | /usr/bin/awk '{print $NF}')/main.cf"
   /usr/bin/sed \
-    -e "s|^\(smtpd_tls_eccert_file\).*$|\1 = ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt|" \
-    -e "s|^\(smtpd_tls_eckey_file\).*$|\1 = ${DIRSSL}/${DOMAIN}/_privkey.ecc.key|" \
-    -e "s|^\(smtpd_tls_cert_file\).*$|\1 = ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt|" \
-    -e "s|^\(smtpd_tls_key_file\).*$|\1 = ${DIRSSL}/${DOMAIN}/_privkey.rsa.key|" \
+    -e "s|^\(smtpd_tls_eccert_file\).*$|\1 = "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt|"" \
+    -e "s|^\(smtpd_tls_eckey_file\).*$|\1 = "${DIRSSL}/${DOMAIN}/_privkey.ecc.key|"" \
+    -e "s|^\(smtpd_tls_cert_file\).*$|\1 = "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt|"" \
+    -e "s|^\(smtpd_tls_key_file\).*$|\1 = "${DIRSSL}/${DOMAIN}/_privkey.rsa.key|"" \
     -i '' ${POSTFIX_CONF}
   return
 }
@@ -492,14 +493,14 @@ service_reload () {
 setup_domain () {
   local DOMAIN="${1}"
   local EMAIL="${2}"
-  if [ ! -d "${DIRSSL}/${DOMAIN}" ]; then
-    /bin/mkdir -p ${DIRSSL}/${DOMAIN}
+  if [ ! -d ""${DIRSSL}/${DOMAIN}"" ]; then
+    /bin/mkdir -p "${DIRSSL}/${DOMAIN}"
   else
-    /bin/mkdir -p ${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}
-    /bin/mv -f ${DIRSSL}/${DOMAIN} ${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}
-    /bin/mkdir -p ${DIRSSL}/${DOMAIN}
+    /bin/mkdir -p "${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}"
+    /bin/mv -f "${DIRSSL}/${DOMAIN}" "${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}"
+    /bin/mkdir -p "${DIRSSL}/${DOMAIN}"
   fi
-  cd ${DIRSSL}/${DOMAIN}
+  cd "${DIRSSL}/${DOMAIN}"
   create_keys ${DOMAIN}
   create_acme_account ${EMAIL}
   return
@@ -509,14 +510,14 @@ setup_subdomain () {
   local DOMAIN="${1}"
   local SUBDOMAIN="${2}"
   local EMAIL="${3}"
-  if [ ! -d "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}" ]; then
-    /bin/mkdir -p ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}
+  if [ ! -d ""${DIRSSL}/${DOMAIN}/${SUBDOMAIN}"" ]; then
+    /bin/mkdir -p "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}"
   else
-    /bin/mkdir -p ${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}
-    /bin/mv -f ${DIRSSL}/${DOMAIN}/${SUBDOMAIN} ${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}/${SUBDOMAIN}
-    /bin/mkdir -p ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}
+    /bin/mkdir -p "${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}"
+    /bin/mv -f "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}" "${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}/${SUBDOMAIN}"
+    /bin/mkdir -p "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}"
   fi
-  cd ${DIRSSL}/${DOMAIN}
+  cd "${DIRSSL}/${DOMAIN}"
   create_requests ${DOMAIN} ${SUBDOMAIN} ${EMAIL}
   create_acme_certificates ${DOMAIN} ${SUBDOMAIN} ${EMAIL}
   return
@@ -528,6 +529,7 @@ setup_subdomain () {
 
 if [ "$(/usr/bin/whoami)" != "root" ]; then
   cecho "You must be root to run this script!" boldred
+  exit 1
 fi
 if [ -z "${1}" ]; then
   show_usage
@@ -543,11 +545,11 @@ until [ -z "${1}" ]; do
   esac
   shift
 done
-if [ ! -d "${DIRSSL}/configs" ]; then
-  /bin/mkdir -p ${DIRSSL}/configs
+if [ ! -d ""${DIRSSL}/configs"" ]; then
+  /bin/mkdir -p "${DIRSSL}/configs"
 fi
-if [ ! -d "${DIRWWW}/acme/.well-known" ]; then
-  /bin/mkdir -p ${DIRWWW}/acme/.well-known
+if [ ! -d ""${DIRWWW}/acme/.well-known"" ]; then
+  /bin/mkdir -p "${DIRWWW}/acme/.well-known"
 fi
 if [ "${CREATE}" -eq 1 ]; then
   NEXT_DOMAIN=1
@@ -560,9 +562,9 @@ if [ "${CREATE}" -eq 1 ]; then
       read_prompt "Enter Mailadress:"
       EMAIL="$(tolower "${REPLY}")"
     fi
-    /usr/bin/grep -q "^${DOMAIN}" ${DIRSSL}/configs/domains.txt >/dev/null 2>&1
+    /usr/bin/grep -q "^${DOMAIN}" "${DIRSSL}/configs/domains.txt" >/dev/null 2>&1
     if [ "${?}" != 0 ]; then
-      /bin/echo "${DOMAIN} ${EMAIL}" >> ${DIRSSL}/configs/domains.txt
+      /bin/echo "${DOMAIN} ${EMAIL}" >> "${DIRSSL}/configs/domains.txt"
       setup_domain ${DOMAIN} ${EMAIL}
     fi
     NEXT_SUBDOMAIN=1
@@ -571,9 +573,9 @@ if [ "${CREATE}" -eq 1 ]; then
         read_prompt "Enter Subdomain:"
         SUBDOMAIN="$(tolower "${REPLY}")"
       fi
-      /usr/bin/grep -q "^${SUBDOMAIN}" ${DIRSSL}/configs/${DOMAIN}.txt >/dev/null 2>&1
+      /usr/bin/grep -q "^${SUBDOMAIN}" "${DIRSSL}/configs/${DOMAIN}.txt" >/dev/null 2>&1
       if [ "${?}" != 0 ]; then
-        /bin/echo "${SUBDOMAIN}" >> ${DIRSSL}/configs/${DOMAIN}.txt
+        /bin/echo "${SUBDOMAIN}" >> "${DIRSSL}/configs/${DOMAIN}.txt"
         setup_subdomain ${DOMAIN} ${SUBDOMAIN} ${EMAIL}
       fi
       read_prompt "Automatically reconfigure apache24 for this subdomain? [y/n]"
@@ -617,15 +619,15 @@ elif [ "${RENEW}" -eq 1 ]; then
   cecho "if they are valid for less than 10 days." white
   read_prompt "Are you sure? [y/n]"
   if [ "x${REPLY}" = "xy" ]; then
-    cat ${DIRSSL}/configs/domains.txt | \
+    cat "${DIRSSL}/configs/domains.txt" | \
     while read DOMAIN EMAIL OFFSET; do
-      cat ${DIRSSL}/configs/${DOMAIN}.txt | \
+      cat "${DIRSSL}/configs/${DOMAIN}.txt" | \
       while read SUBDOMAIN OFFSET; do
         cecho "Backups of your current certificates will be saved in" white
-        cecho "${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}/${SUBDOMAIN}" white
+        cecho ""${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}/${SUBDOMAIN}"" white
         CERT_DATE_ORIG="$(/usr/local/bin/openssl x509 \
                        -inform pem -enddate -noout \
-                       -in ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt | \
+                       -in "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt" | \
                        /usr/bin/cut -d = -f 2-)"
         CERT_DATE_RENEW_S="$(/bin/date -j -u -v-10d -f "%b %d %T %Y %Z" "${CERT_DATE_ORIG}" "+%s")"
         if [ "${CUR_DATE_S}" -gt "${CERT_DATE_RENEW_S}" ]; then
@@ -641,13 +643,13 @@ elif [ "${RENEW}" -eq 1 ]; then
   service_reload dovecot
   service_reload postfix
 elif [ "${CRON}" -eq 1 ]; then
-  cat ${DIRSSL}/configs/domains.txt | \
+  cat "${DIRSSL}/configs/domains.txt" | \
   while read DOMAIN EMAIL OFFSET; do
-    cat ${DIRSSL}/configs/${DOMAIN}.txt | \
+    cat "${DIRSSL}/configs/${DOMAIN}.txt" | \
     while read SUBDOMAIN OFFSET; do
       CERT_DATE_ORIG="$(/usr/local/bin/openssl x509 \
                      -inform pem -enddate -noout \
-                     -in ${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt | \
+                     -in "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt" | \
                      /usr/bin/cut -d = -f 2-)"
       CERT_DATE_RENEW_S="$(/bin/date -j -u -v-10d -f "%b %d %T %Y %Z" "${CERT_DATE_ORIG}" "+%s")"
       if [ "${CUR_DATE_S}" -gt "${CERT_DATE_RENEW_S}" ]; then
