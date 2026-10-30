@@ -196,12 +196,40 @@ show_version() {
   exit 0
 }
 
+require_command() {
+  command_name="${1}"
+  if ! command -v "${command_name}" >/dev/null 2>&1; then
+    cecho "Required command not found: ${command_name}" boldred
+    exit 1
+  fi
+}
+
+is_valid_name() {
+  value="${1:-}"
+  case "${value}" in
+    ""|*[!a-z0-9.-]*|*..*|*.|*-) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+add_unique_line() {
+  file_path="${1}"
+  line_value="${2}"
+  if [ ! -f "${file_path}" ]; then
+    : > "${file_path}"
+  fi
+  if ! grep -Fqx "${line_value}" "${file_path}" 2>/dev/null; then
+    printf '%s\n' "${line_value}" >> "${file_path}"
+  fi
+}
+
 #############################
 ###### Local functions ######
 #############################
 
 create_keys() {
   DOMAIN="${1}"
+
   /usr/local/bin/openssl rand -hex 16 | \
     /usr/local/bin/openssl passwd -1 -stdin | \
     /usr/bin/tr -cd "[[:alnum:]]" \
@@ -381,6 +409,49 @@ create_acme_account() {
   return 0
 }
 
+run_certbot_certonly() {
+  DOMAIN="${1}"
+  SUBDOMAIN="${2}"
+  EMAIL="${3}"
+  KEYTYPE="${4}"
+  STAGINGPARM="${5}"
+
+  case "${KEYTYPE}" in
+    ecc)
+      csr_file="${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.ecc.csr"
+      key_file="${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc"
+      cert_file="${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.ecc.crt"
+      chain_file="${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.ecc.crt"
+      fullchain_file="${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt"
+      ;;
+    rsa)
+      csr_file="${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.rsa.csr"
+      key_file="${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc"
+      cert_file="${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt"
+      chain_file="${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.rsa.crt"
+      fullchain_file="${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt"
+      ;;
+    *)
+      cecho "Unsupported key type: ${KEYTYPE}" boldred
+      return 1
+      ;;
+  esac
+
+  /usr/local/bin/certbot certonly ${STAGINGPARM} \
+    --text --quiet --agree-tos --non-interactive \
+    --user-agent-comment "RootService-Wrapper/${VERSION}" \
+    --preferred-challenges http --config-dir "${DIRSSL}/acme" \
+    --csr "${csr_file}" \
+    --key-path "${key_file}" \
+    --cert-path "${cert_file}" \
+    --chain-path "${chain_file}" \
+    --fullchain-path "${fullchain_file}" \
+    --email "${EMAIL}" --webroot --webroot-path "${DIRWWW}/acme" \
+    --domain "${SUBDOMAIN}.${DOMAIN}"
+
+  return 0
+}
+
 create_acme_certificates() {
   DOMAIN="${1}"
   SUBDOMAIN="${2}"
@@ -395,29 +466,8 @@ create_acme_certificates() {
     return 1
   fi
 
-  /usr/local/bin/certbot certonly ${STAGINGPARM} \
-    --text --quiet --agree-tos --non-interactive \
-    --user-agent-comment "RootService-Wrapper/${VERSION}" \
-    --preferred-challenges http --config-dir "${DIRSSL}/acme" \
-    --csr "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.ecc.csr" \
-    --key-path "${DIRSSL}/${DOMAIN}/_privkey.ecc.key.enc" \
-    --cert-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.ecc.crt" \
-    --chain-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.ecc.crt" \
-    --fullchain-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.ecc.crt" \
-    --email "${EMAIL}" --webroot --webroot-path "${DIRWWW}/acme" \
-    --domain "${SUBDOMAIN}.${DOMAIN}"
-
-  /usr/local/bin/certbot certonly ${STAGINGPARM} \
-    --text --quiet --agree-tos --non-interactive \
-    --user-agent-comment "RootService-Wrapper/${VERSION}" \
-    --preferred-challenges http --config-dir "${DIRSSL}/acme" \
-    --csr "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/request.rsa.csr" \
-    --key-path "${DIRSSL}/${DOMAIN}/_privkey.rsa.key.enc" \
-    --cert-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt" \
-    --chain-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/chain.rsa.crt" \
-    --fullchain-path "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/fullchain.rsa.crt" \
-    --email "${EMAIL}" --webroot --webroot-path "${DIRWWW}/acme" \
-    --domain "${SUBDOMAIN}.${DOMAIN}"
+  run_certbot_certonly "${DOMAIN}" "${SUBDOMAIN}" "${EMAIL}" "ecc" "${STAGINGPARM}"
+  run_certbot_certonly "${DOMAIN}" "${SUBDOMAIN}" "${EMAIL}" "rsa" "${STAGINGPARM}"
 
   return 0
 }
@@ -550,6 +600,30 @@ setup_subdomain() {
   return 0
 }
 
+check_renewal_needed() {
+  DOMAIN="${1}"
+  SUBDOMAIN="${2}"
+  EMAIL="${3}"
+
+  cert_path="${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt"
+  if [ ! -f "${cert_path}" ]; then
+    return 1
+  fi
+
+  CERT_DATE_ORIG="$(/usr/local/bin/openssl x509 \
+                 -inform pem -enddate -noout \
+                 -in "${cert_path}" | \
+                 /usr/bin/cut -d = -f 2-)"
+
+  CERT_DATE_RENEW_S="$(/bin/date -j -u -v-10d -f "%b %d %T %Y %Z" "${CERT_DATE_ORIG}" "+%s")"
+
+  if [ "${CUR_DATE_S}" -gt "${CERT_DATE_RENEW_S}" ]; then
+    return 0
+  fi
+
+  return 1
+}
+
 ##########################
 ###### Main section ######
 ##########################
@@ -558,6 +632,13 @@ if [ "$(/usr/bin/whoami)" != "root" ]; then
   cecho "You must be root to run this script!" boldred
   exit 1
 fi
+
+for cmd in /bin/date /bin/echo /usr/bin/awk /usr/bin/cut /usr/bin/sed /usr/bin/tr /usr/bin/tput /usr/bin/whoami /usr/local/bin/openssl /usr/local/bin/certbot /usr/local/sbin/httpd /usr/local/sbin/dovecot /usr/local/sbin/postconf /usr/sbin/service /bin/mkdir /bin/mv /bin/cat /usr/bin/grep; do
+  if [ ! -e "${cmd}" ]; then
+    cecho "Required command not found: ${cmd}" boldred
+    exit 1
+  fi
+done
 
 if [ -z "${1:-}" ]; then
   show_usage
@@ -595,8 +676,21 @@ if [ "${CREATE}" -eq "1" ]; then
       EMAIL="$(tolower "${REPLY}")"
     fi
 
+    if ! is_valid_name "${DOMAIN}"; then
+      cecho "Invalid domain name: ${DOMAIN}" boldred
+      exit 1
+    fi
+
+    if ! is_valid_name "${EMAIL}"; then
+      cecho "Invalid email address: ${EMAIL}" boldred
+      exit 1
+    fi
+
+    if [ ! -f "${DIRSSL}/configs/domains.txt" ]; then
+      : > "${DIRSSL}/configs/domains.txt"
+    fi
     if ! grep -Fq "${DOMAIN}" "${DIRSSL}/configs/domains.txt" 2>/dev/null; then
-      /bin/echo "${DOMAIN} ${EMAIL}" >> "${DIRSSL}/configs/domains.txt"
+      printf '%s %s\n' "${DOMAIN}" "${EMAIL}" >> "${DIRSSL}/configs/domains.txt"
       setup_domain "${DOMAIN}" "${EMAIL}"
     fi
 
@@ -607,8 +701,16 @@ if [ "${CREATE}" -eq "1" ]; then
         SUBDOMAIN="$(tolower "${REPLY}")"
       fi
 
+      if ! is_valid_name "${SUBDOMAIN}"; then
+        cecho "Invalid subdomain name: ${SUBDOMAIN}" boldred
+        exit 1
+      fi
+
+      if [ ! -f "${DIRSSL}/configs/${DOMAIN}.txt" ]; then
+        : > "${DIRSSL}/configs/${DOMAIN}.txt"
+      fi
       if ! grep -Fq "${SUBDOMAIN}" "${DIRSSL}/configs/${DOMAIN}.txt" 2>/dev/null; then
-        /bin/echo "${SUBDOMAIN}" >> "${DIRSSL}/configs/${DOMAIN}.txt"
+        printf '%s\n' "${SUBDOMAIN}" >> "${DIRSSL}/configs/${DOMAIN}.txt"
         setup_subdomain "${DOMAIN}" "${SUBDOMAIN}" "${EMAIL}"
       fi
 
@@ -659,25 +761,17 @@ elif [ "${RENEW}" -eq "1" ]; then
   if [ "x${REPLY}" = "xy" ]; then
     while read DOMAIN EMAIL OFFSET; do
       [ -n "${DOMAIN:-}" ] || continue
+      if [ ! -f "${DIRSSL}/configs/${DOMAIN}.txt" ]; then
+        continue
+      fi
       while read SUBDOMAIN OFFSET; do
         [ -n "${SUBDOMAIN:-}" ] || continue
-        cecho "Backups of your current certificates will be saved in" white
-        cecho "${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}/${SUBDOMAIN}" white
-
-        CERT_DATE_ORIG="$(/usr/local/bin/openssl x509 \
-                       -inform pem -enddate -noout \
-                       -in "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt" | \
-                       /usr/bin/cut -d = -f 2-)"
-
-        CERT_DATE_RENEW_S="$(/bin/date -j -u -v-10d -f "%b %d %T %Y %Z" "${CERT_DATE_ORIG}" "+%s")"
-
-        if [ "${CUR_DATE_S}" -gt "${CERT_DATE_RENEW_S}" ]; then
+        if check_renewal_needed "${DOMAIN}" "${SUBDOMAIN}" "${EMAIL}"; then
+          cecho "Backups of your current certificates will be saved in" white
+          cecho "${DIRSSL}/archives/${CUR_DATE_F}-${CUR_DATE_S}/${DOMAIN}/${SUBDOMAIN}" white
           setup_subdomain "${DOMAIN}" "${SUBDOMAIN}" "${EMAIL}"
         fi
-        SUBDOMAIN=
       done < "${DIRSSL}/configs/${DOMAIN}.txt"
-      DOMAIN=
-      EMAIL=
     done < "${DIRSSL}/configs/domains.txt"
   fi
 
@@ -685,28 +779,27 @@ elif [ "${RENEW}" -eq "1" ]; then
   service_reload dovecot
   service_reload postfix
 elif [ "${CRON}" -eq "1" ]; then
+  if [ ! -f "${DIRSSL}/configs/domains.txt" ]; then
+    exit 0
+  fi
+
   while read DOMAIN EMAIL OFFSET; do
     [ -n "${DOMAIN:-}" ] || continue
+    if [ ! -f "${DIRSSL}/configs/${DOMAIN}.txt" ]; then
+      continue
+    fi
     while read SUBDOMAIN OFFSET; do
       [ -n "${SUBDOMAIN:-}" ] || continue
-
-      CERT_DATE_ORIG="$(/usr/local/bin/openssl x509 \
-                     -inform pem -enddate -noout \
-                     -in "${DIRSSL}/${DOMAIN}/${SUBDOMAIN}/cert.rsa.crt" | \
-                     /usr/bin/cut -d = -f 2-)"
-
-      CERT_DATE_RENEW_S="$(/bin/date -j -u -v-10d -f "%b %d %T %Y %Z" "${CERT_DATE_ORIG}" "+%s")"
-
-      if [ "${CUR_DATE_S}" -gt "${CERT_DATE_RENEW_S}" ]; then
+      if check_renewal_needed "${DOMAIN}" "${SUBDOMAIN}" "${EMAIL}"; then
         setup_subdomain "${DOMAIN}" "${SUBDOMAIN}" "${EMAIL}"
       fi
-      SUBDOMAIN=
     done < "${DIRSSL}/configs/${DOMAIN}.txt"
-    DOMAIN=
-    EMAIL=
   done < "${DIRSSL}/configs/domains.txt"
 
   service_reload apache24
   service_reload dovecot
   service_reload postfix
 fi
+
+exit 0
+
