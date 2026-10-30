@@ -1,6 +1,5 @@
 #!/bin/sh
 set -eu
-
 #
 #  **********************************************************************************
 #  *                                certbot-wrapper                                 *
@@ -555,7 +554,7 @@ setup_subdomain() {
 ###### Main section ######
 ##########################
 
-if [ "$( /usr/bin/whoami )" != "root" ]; then
+if [ "$(/usr/bin/whoami)" != "root" ]; then
   cecho "You must be root to run this script!" boldred
   exit 1
 fi
